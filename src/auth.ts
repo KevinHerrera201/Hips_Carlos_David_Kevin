@@ -1,5 +1,6 @@
 import { pool } from "./db";
 
+// LOGIN
 export async function login(usuario: string, password: string) {
   try {
     const res = await pool.query(
@@ -19,20 +20,35 @@ export async function login(usuario: string, password: string) {
         message: "Usuario o contraseña incorrectos",
       };
     }
-  } catch (error) {
+  } catch (error: any) {
+    console.error(error);
     return {
       success: false,
       message: "Error en el servidor",
     };
+  }
 }
 
-//Registo
-  }
+// REGISTRO (CORREGIDO)
 export async function register(usuario: string, password: string, rol: string) {
   try {
+    // Verificar si ya existe
+    const check = await pool.query(
+      "SELECT * FROM usuarios WHERE usuario = $1",
+      [usuario]
+    );
+
+    if (check.rows.length > 0) {
+      return {
+        success: false,
+        message: "El usuario ya existe",
+      };
+    }
+
+    // Insertar
     const res = await pool.query(
       "INSERT INTO usuarios (usuario, password, rol) VALUES ($1, $2, $3) RETURNING *",
-      [usuario, password, rol]
+      [usuario, password, rol || "usuario"]
     );
 
     return {
@@ -40,10 +56,12 @@ export async function register(usuario: string, password: string, rol: string) {
       message: "Usuario registrado correctamente",
       user: res.rows[0],
     };
-  } catch (error) {
+  } catch (error: any) {
+    console.error("ERROR REGISTER:", error.message);
+
     return {
       success: false,
-      message: "Error: el usuario ya existe",
+      message: "Error en el servidor",
     };
   }
 }

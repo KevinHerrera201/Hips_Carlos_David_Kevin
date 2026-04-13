@@ -3,73 +3,51 @@
 <head>
   <title>Registro - Hipstagram</title>
 </head>
+
 <body>
 
-  <h2>Registrar Usuario</h2>
+<h2>Registro</h2>
 
-  <!-- INPUT USUARIO -->
-  <input type="text" id="usuario" placeholder="Usuario"><br><br>
+<input id="usuario" placeholder="Usuario"><br><br>
+<input id="password" type="password" placeholder="Contraseña"><br><br>
 
-  <!-- INPUT PASSWORD -->
-  <input type="password" id="password" placeholder="Contraseña"><br><br>
+<select id="rol">
+  <option value="usuario">Usuario</option>
+  <option value="admin">Administrador</option>
+</select>
 
-  <!-- SELECCIÓN DE ROL -->
-  <h3>Seleccione tipo de usuario:</h3>
-  <select id="rol">
-    <option value="usuario">Usuario</option>
-    <option value="admin">Administrador</option>
-  </select>
+<br><br>
 
-  <br><br>
+<button onclick="registrar()">Guardar</button>
+<button onclick="cancelar()">Cancelar</button>
 
-  <!-- BOTONES -->
-  <button onclick="registrar()">Guardar</button>
-  <button onclick="cancelar()">Cancelar</button>
+<p id="mensaje"></p>
 
-  <!-- MENSAJE -->
-  <p id="mensaje"></p>
+<script>
+console.log("JS cargado");
 
-  <script>
-    async function registrar() {
-      const usuario = document.getElementById("usuario").value;
-      const password = document.getElementById("password").value;
-      const rol = document.getElementById("rol").value;
+async function registrar() {
+  console.log("CLICK DETECTADO");
 
-      // Validación básica
-      if (!usuario || !password) {
-        document.getElementById("mensaje").innerText = "Complete todos los campos";
-        return;
-      }
+  const usuario = document.getElementById("usuario").value;
+  const password = document.getElementById("password").value;
+  const rol = document.getElementById("rol").value;
 
-      try {
-        const res = await fetch("/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ usuario, password, rol })
-        });
+  console.log({ usuario, password, rol });
 
-        const data = await res.json();
+  const res = await fetch("http://localhost:3000/register", {
 
-        document.getElementById("mensaje").innerText = data.message;
+  });
 
-        // Si se registra correctamente
-        if (data.success) {
-          setTimeout(() => {
-            window.location.href = "index.html";
-          }, 1500);
-        }
+  const data = await res.json();
 
-      } catch (error) {
-        document.getElementById("mensaje").innerText = "Error al conectar con el servidor";
-      }
-    }
+  document.getElementById("mensaje").innerText = data.message;
+}
 
-    function cancelar() {
-      window.location.href = "index.html";
-    }
-  </script>
+function cancelar() {
+  window.location.href = "index.html";
+}
+</script>
 
 </body>
 </html>
