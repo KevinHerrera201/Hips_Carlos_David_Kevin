@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hipstagram Login</title>
+</head>
+<body>
+
+  <h2>Login Hipstagram</h2>
+
+  <input type="text" id="usuario" placeholder="Usuario"><br><br>
+  <input type="password" id="password" placeholder="Contraseña"><br><br>
+
+  <button onclick="login()">Ingresar</button>
+
+  <p id="resultado"></p>
+
+  <br><br>
+  <p>¿Desea registrar un usuario?</p>
+  <button onclick="irRegistro()">Registrarse</button>
+
+  <script>
+    async function login() {
+      const usuario = document.getElementById("usuario").value;
+      const password = document.getElementById("password").value;
+
+      const res = await fetch("/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ usuario, password })
+      });
+
+      const data = await res.json();
+
+      document.getElementById("resultado").innerText = data.message;
+    }
+
+    function irRegistro() {
+      window.location.href = "registro.html";
+    }
+  </script>
+
+</body>
+</html>
