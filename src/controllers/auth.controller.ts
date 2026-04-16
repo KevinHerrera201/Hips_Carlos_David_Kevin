@@ -3,16 +3,19 @@ import bcrypt from 'bcrypt';
 import { pool } from '../db/database';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
-    const { usuario, password, correo, rol } = req.body;
+    // Ya no recibimos 'rol'
+    const { usuario, correo, password } = req.body; 
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const result = await pool.query(
-            'INSERT INTO usuarios (usuario, password, correo, rol) VALUES ($1, $2, $3, $4) RETURNING id, usuario, correo, rol',
-            [usuario, hashedPassword, correo, rol]
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        
+        // Forzamos el rol 'normal' directamente en la consulta
+        await pool.query(
+            'INSERT INTO usuarios (usuario, correo, password, rol) VALUES ($1, $2, $3, $4)', 
+            [usuario, correo, hashedPassword, 'normal']
         );
-        res.status(201).json({ message: 'Usuario creado', user: result.rows[0] });
+        res.status(201).json({ message: 'Usuario registrado exitosamente' });
     } catch (error) {
-        console.log("Error detallado:", error);
         res.status(500).json({ error: 'Error al registrar usuario' });
     }
 };

@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <title>Admin - Hipstagram</title>
     <link rel="stylesheet" href="/styles.css">
+    <style>
+        /* Estilos específicos para el panel de Admin */
+        .admin-container { display: flex; min-height: calc(100vh - 60px); }
+        .sidebar { width: 250px; background: #282c34; padding: 20px 0; }
+        .sidebar button { display: block; width: 100%; padding: 15px 20px; background: none; border: none; color: white; text-align: left; cursor: pointer; font-size: 16px; border-bottom: 1px solid #3c4048; transition: 0.3s; }
+        .sidebar button:hover, .sidebar button.active { background: #61dafb; color: #282c34; font-weight: bold; }
+        .content-area { flex: 1; padding: 30px; background: #f4f7f6; color: #333; }
+        .seccion { display: none; }
+        .seccion.activa { display: block; }
+        .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .caja { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .lista-scroll { max-height: 300px; overflow-y: auto; padding-left: 20px; margin-top: 15px; }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -14,59 +27,257 @@
         </div>
     </nav>
 
-    <div class="main-content">
-        <h2>Gestión de Listas Negras</h2>
-
-        <div class="auth-container" style="margin-top: 20px;">
-            <h3>Agregar Palabra Prohibida</h3><br>
-            <form id="formPalabra">
-                <input type="text" id="palabra" class="form-control" placeholder="Ej: insulto" required>
-                <button type="submit" class="btn">Guardar Palabra</button>
-            </form>
+    <div class="admin-container">
+        <div class="sidebar">
+            <button class="active" onclick="mostrarSeccion('sec-usuarios', this)">Gestionar Usuarios</button>
+            <button onclick="mostrarSeccion('sec-palabras', this)">Palabras Prohibidas</button>
+            <button onclick="mostrarSeccion('sec-hashtags', this)">Hashtags Prohibidos</button>
+            <button onclick="mostrarSeccion('sec-bitacora', this)">Ver Acciones</button>
         </div>
 
-        <div class="auth-container" style="margin-top: 20px;">
-            <h3>Agregar Hashtag Prohibido</h3><br>
-            <form id="formHashtag">
-                <input type="text" id="hashtag" class="form-control" placeholder="Ej: #spam" required>
-                <button type="submit" class="btn">Guardar Hashtag</button>
-            </form>
+        <div class="content-area">
+            
+            <div id="sec-usuarios" class="seccion activa">
+                <h2>Gestión de Usuarios</h2><br>
+                <input type="text" onkeyup="filtrar(this, 'cuerpoTablaUsuarios', 'tr')" placeholder="🔍 Buscar por usuario, correo o rol..." class="form-control" style="margin-top: 10px; max-width: 400px;">
+                <div class="caja" style="margin-top: 20px;">
+                    <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #ccc;">
+                                <th>Usuario</th> <th>Correo</th> <th>Fecha de Creación</th> <th>Rol</th> <th>Estado</th> <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaUsuarios"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="sec-palabras" class="seccion">
+                <h2>Gestión de Palabras Prohibidas</h2>
+                <div class="grid-2-col">
+                    <div class="caja">
+                        <h3>Lista de Palabras</h3><br>
+                        <ul id="listaPalabras" class="lista-scroll"></ul>
+                    </div>
+                    <div class="caja">
+                        <h3>Lista de Palabras</h3>
+                        <input type="text" onkeyup="filtrar(this, 'listaPalabras', 'li')" placeholder="🔍 Buscar palabra..." class="form-control" style="margin-bottom: 10px;">
+                        <form id="formPalabra">
+                            <input type="text" id="palabra" class="form-control" placeholder="Ej: insulto" required>
+                            <button type="submit" class="btn">Guardar Palabra</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sec-hashtags" class="seccion">
+                <h2>Gestión de Hashtags Prohibidos</h2>
+                <div class="grid-2-col">
+                    <div class="caja">
+                        <h3>Lista de Hashtags</h3>
+                        <ul id="listaHashtags" class="lista-scroll"></ul>
+                    </div>
+                    <div class="caja">
+                        <h3>Lista de Hashtags</h3><br>
+                        <input type="text" onkeyup="filtrar(this, 'listaHashtags', 'li')" placeholder="🔍 Buscar hashtag..." class="form-control" style="margin-bottom: 10px;">
+                        <form id="formHashtag">
+                            <input type="text" id="hashtag" class="form-control" placeholder="Ej: #spam" required>
+                            <button type="submit" class="btn">Guardar Hashtag</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div id="sec-bitacora" class="seccion">
+                <h2>Registro de Acciones</h2>
+                <input type="text" onkeyup="filtrar(this, 'cuerpoBitacora', 'tr')" placeholder="🔍 Buscar acción..." class="form-control" style="margin-bottom: 10px;">
+                <div class="caja" style="margin-top: 20px; max-height: 500px; overflow-y: auto;">
+                    <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #ccc;">
+                                <th>Fecha</th> <th>Usuario</th> <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoBitacora"></tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
-   <script>
-        function cerrarSesion() {
-            localStorage.removeItem('usuarioLogeado');
-            window.location.href = '/';
+<script>
+    // Capturar el usuario actual desde el login
+let nombreUsuarioActual = 'Admin';
+    const usuarioGuardado = localStorage.getItem('usuarioLogeado');
+    if (usuarioGuardado) {
+        try { 
+            nombreUsuarioActual = JSON.parse(usuarioGuardado).usuario || 'Admin'; 
+        } catch (e) { 
+            nombreUsuarioActual = usuarioGuardado; // Usa el texto normal si falla el JSON
         }
+    }
+    
+    // Función para cambiar de pestaña en el menú
+    function mostrarSeccion(id, btn) {
+        document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+        document.getElementById(id).classList.add('activa');
+        document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
 
-        // Enviar Palabra
-        document.getElementById('formPalabra').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const palabra = document.getElementById('palabra').value;
-            const res = await fetch('/api/admin/palabras', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ palabra })
-            });
-            const data = await res.json();
-            if (res.ok) { alert(data.message); document.getElementById('formPalabra').reset(); }
-            else { alert('Error: ' + data.error); }
-        });
+    function cerrarSesion() {
+        localStorage.removeItem('usuarioLogeado');
+        window.location.href = '/';
+    }
+    function filtrar(input, contenedorId, etiqueta) {
+        const textoFiltro = input.value.toLowerCase();
+        const elementos = document.getElementById(contenedorId).getElementsByTagName(etiqueta);
+        
+        for (let i = 0; i < elementos.length; i++) {
+            const contenido = elementos[i].textContent || elementos[i].innerText;
+            if (contenido.toLowerCase().indexOf(textoFiltro) > -1) {
+                elementos[i].style.display = ""; // Muestra si coincide
+            } else {
+                elementos[i].style.display = "none"; // Oculta si no coincide
+            }
+        }
+    }
+    // Función unificada para cargar todos los datos de la base de datos
+    async function cargarDatos() {
+        try {
+            // Cargar Usuarios
+            const resU = await fetch('/api/admin/usuarios');
+            const usuarios = await resU.json();
+            document.getElementById('cuerpoTablaUsuarios').innerHTML = usuarios.map(u => {
+                const fecha = u.fecha_creacion ? new Date(u.fecha_creacion).toLocaleDateString('es-ES') : 'Sin fecha';
+                const esAdmin = u.rol === 'admin';
+                
+                return `
+                <tr style="border-bottom: 1px solid #eee; height: 50px;">
+                    <td>${u.usuario}</td><td>${u.correo}</td>
+                    <td>${fecha}</td>
+                    <td>
+                        <span style="font-weight: bold; color: ${esAdmin ? '#007bff' : '#6c757d'};">${u.rol ? u.rol.toUpperCase() : 'NORMAL'}</span>
+                    </td>
+                    <td style="color: ${u.activo ? 'green' : 'red'}; font-weight: bold;">${u.activo ? 'Activo' : 'Inactivo'}</td>
+                    <td>
+                        <button class="btn" style="padding: 5px; background: ${u.activo ? '#dc3545' : '#28a745'};" 
+                            onclick="cambiarEstado(${u.id}, ${!u.activo})">${u.activo ? 'Desactivar' : 'Activar'}</button>
+                        <button class="btn" style="padding: 5px; background: #ffc107; color: black; margin-left: 5px;" 
+                            onclick="cambiarRol(${u.id}, '${esAdmin ? 'normal' : 'admin'}')">Hacer ${esAdmin ? 'Normal' : 'Admin'}</button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
 
-        // Enviar Hashtag
-        document.getElementById('formHashtag').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const hashtag = document.getElementById('hashtag').value;
-            const res = await fetch('/api/admin/hashtags', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hashtag })
-            });
-            const data = await res.json();
-            if (res.ok) { alert(data.message); document.getElementById('formHashtag').reset(); }
-            else { alert('Error: ' + data.error); }
+            // Cargar Palabras
+            const resP = await fetch('/api/admin/palabras');
+            const palabras = await resP.json();
+            document.getElementById('listaPalabras').innerHTML = palabras.map(p => `
+                <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                    <span>${p.palabra}</span> 
+                    <button class="btn" style="padding: 2px 8px; background: #dc3545; width: auto;" onclick="borrarPalabra(${p.id})">X</button>
+                </li>`).join('');
+
+            // Cargar Hashtags
+            const resH = await fetch('/api/admin/hashtags');
+            const hashtags = await resH.json();
+            document.getElementById('listaHashtags').innerHTML = hashtags.map(h => `
+                <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                    <span>${h.hashtag}</span> 
+                    <button class="btn" style="padding: 2px 8px; background: #dc3545; width: auto;" onclick="borrarHashtag(${h.id})">X</button>
+                </li>`).join('');
+
+            // Cargar Bitácora
+            const resB = await fetch('/api/admin/bitacora');
+            const bitacora = await resB.json();
+            document.getElementById('cuerpoBitacora').innerHTML = bitacora.map(b => `
+                <tr style="border-bottom: 1px solid #eee; height: 40px;">
+                    <td>${new Date(b.fecha).toLocaleString('es-ES')}</td>
+                    <td><strong>${b.usuario}</strong></td>
+                    <td>${b.accion}</td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error("Error cargando los datos:", error);
+        }
+    }
+
+    async function cambiarEstado(id, nuevoEstado) {
+        const res = await fetch(`/api/admin/usuarios/${id}/estado`, { 
+            method: 'PUT', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-usuario': nombreUsuarioActual 
+            }, 
+            body: JSON.stringify({ activo: nuevoEstado }) 
         });
+        if (res.ok) cargarDatos();
+    }
+
+    async function cambiarRol(id, nuevoRol) {
+        const res = await fetch(`/api/admin/usuarios/${id}/rol`, { 
+            method: 'PUT', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-usuario': nombreUsuarioActual 
+            }, 
+            body: JSON.stringify({ rol: nuevoRol }) 
+        });
+        if (res.ok) cargarDatos();
+        else alert('Error al actualizar el rol');
+    }
+
+    async function borrarPalabra(id) {
+        if (!confirm('¿Seguro que deseas eliminar esta palabra?')) return;
+        const res = await fetch(`/api/admin/palabras/${id}`, { 
+            method: 'DELETE',
+            headers: { 'x-usuario': nombreUsuarioActual }
+        });
+        if (res.ok) cargarDatos();
+    }
+
+    async function borrarHashtag(id) {
+        if (!confirm('¿Seguro que deseas eliminar este hashtag?')) return;
+        const res = await fetch(`/api/admin/hashtags/${id}`, { 
+            method: 'DELETE',
+            headers: { 'x-usuario': nombreUsuarioActual }
+        });
+        if (res.ok) cargarDatos();
+    }
+
+    // Inicializar la carga al entrar a la página
+    cargarDatos();
+
+    // Eventos de los formularios
+    document.getElementById('formPalabra').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const palabra = document.getElementById('palabra').value;
+        const res = await fetch('/api/admin/palabras', { 
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-usuario': nombreUsuarioActual
+            }, 
+            body: JSON.stringify({ palabra }) 
+        });
+        if (res.ok) { document.getElementById('formPalabra').reset(); cargarDatos(); }
+    });
+
+    document.getElementById('formHashtag').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const hashtag = document.getElementById('hashtag').value;
+        const res = await fetch('/api/admin/hashtags', { 
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-usuario': nombreUsuarioActual
+            }, 
+            body: JSON.stringify({ hashtag }) 
+        });
+        if (res.ok) { document.getElementById('formHashtag').reset(); cargarDatos(); }
+    });
     </script>
+    
 </body>
 </html>
