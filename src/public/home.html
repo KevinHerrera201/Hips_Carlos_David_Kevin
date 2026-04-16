@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Home - Hipstagram</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">Hipstagram</div>
+        <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </nav>
+
+    <div class="main-content">
+        <h1 id="mensajeBienvenida">Cargando...</h1>
+        <p>Bienvenido a tu panel principal. Aquí construiremos el resto de la aplicación.</p>
+    </div>
+
+    <script>
+        const usuario = localStorage.getItem('usuarioLogeado');
+        if (!usuario) {
+            window.location.href = '/';
+        } else {
+            document.getElementById('mensajeBienvenida').innerText = '¡Hola, ' + usuario + '!';
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('usuarioLogeado');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

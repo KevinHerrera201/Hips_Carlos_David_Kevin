@@ -1,84 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Hipstagram Login</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: linear-gradient(45deg, #f58529, #dd2a7b, #8134af, #515bd4);
-    }
-
-    .container {
-      background: white;
-      padding: 40px;
-      border-radius: 15px;
-      width: 300px;
-      text-align: center;
-    }
-
-    h1 { color: #dd2a7b; }
-
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-    }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      background: #dd2a7b;
-      color: white;
-      border: none;
-      margin-top: 10px;
-    }
-
-    .link-btn {
-      background: none;
-      color: #dd2a7b;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Login - Hipstagram</title>
 </head>
+<link rel="stylesheet" href="/styles.css">
+<div class="auth-container"> 
 <body>
+    <h2>Iniciar Sesión</h2>
+    <form id="loginForm">
+        <input type="email" id="correo" placeholder="Correo" required><br><br>
+        <input type="password" id="password" placeholder="Contraseña" required><br><br>
+        <button type="submit">Entrar</button>
+    </form>
+    <p>¿No tienes cuenta? <a href="/registro.html">Regístrate aquí</a></p>
 
-<div class="container">
-  <h1>HIPSTAGRAM</h1>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const correo = document.getElementById('correo').value;
+            const password = document.getElementById('password').value;
 
-  <input id="usuario" placeholder="Usuario">
-  <input id="password" type="password" placeholder="Contraseña">
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ correo, password })
+            });
 
-  <button onclick="login()">Ingresar</button>
-
-  <p id="resultado"></p>
-
-  <p>¿No tienes cuenta?</p>
-  <button class="link-btn" onclick="irRegistro()">Registrarse</button>
+            const data = await res.json();
+           if (res.ok) {
+                // Guardamos el nombre del usuario y redirigimos
+                localStorage.setItem('usuarioLogeado', data.usuario);
+                window.location.href = '/home.html';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    </script>
 </div>
-
-<script>
-async function login() {
-  const usuario = document.getElementById("usuario").value;
-  const password = document.getElementById("password").value;
-
-  const res = await fetch("/login", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ usuario, password })
-  });
-
-  const data = await res.json();
-  document.getElementById("resultado").innerText = data.message;
-}
-
-function irRegistro() {
-  window.location.href = "registro.html";
-}
-</script>
-
 </body>
 </html>
