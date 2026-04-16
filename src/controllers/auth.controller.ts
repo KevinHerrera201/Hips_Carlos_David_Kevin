@@ -27,6 +27,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         }
 
         const user = result.rows[0];
+
+        if (user.activo === false) {
+            res.status(403).json({ error: 'Tu cuenta ha sido desactivada o bloqueada.' });
+            return;
+        }
+
         const validPassword = await bcrypt.compare(password, user.password);
         
         if (!validPassword) {
@@ -39,3 +45,4 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         res.status(500).json({ error: 'Error en el login' });
     }
 };
+

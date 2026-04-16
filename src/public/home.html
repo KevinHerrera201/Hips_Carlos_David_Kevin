@@ -8,7 +8,17 @@
 <body>
     <nav class="navbar">
         <div class="navbar-brand">Hipstagram</div>
-        <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+        
+        <div class="nav-center">
+            <input type="text" id="buscador" placeholder="Buscar usuarios o posts..." class="search-input">
+        </div>
+
+        <div class="nav-links">
+            <a href="/home.html" class="nav-btn" title="Home">🏠</a>
+            <button class="nav-btn" title="Subir contenido" onclick="abrirSubirContenido()">➕</button>
+            <a href="/admin.html" class="nav-btn" title="Panel de Administrador">👤</a>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </div>
     </nav>
 
     <div class="main-content">

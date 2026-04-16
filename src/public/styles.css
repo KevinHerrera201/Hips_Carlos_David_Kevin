@@ -17,3 +17,10 @@ body { background-color: #f0f2f5; color: #333; }
 .btn-logout:hover { background: #c82333; }
 .main-content { padding: 50px; text-align: center; }
 .main-content h1 { font-size: 36px; margin-bottom: 15px; }
+/* --- Nuevos estilos para la Navbar --- */
+.navbar { background: #282c34; color: white; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; }
+.nav-center { flex-grow: 1; display: flex; justify-content: center; }
+.search-input { width: 100%; max-width: 300px; padding: 8px 15px; border-radius: 20px; border: none; outline: none; }
+.nav-links { display: flex; gap: 20px; align-items: center; }
+.nav-btn { background: none; border: none; font-size: 22px; cursor: pointer; text-decoration: none; }
+.nav-btn:hover { opacity: 0.7; }

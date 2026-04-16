@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Hipstagram</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">Panel de Administración</div>
+        <div class="nav-links">
+            <a href="/home.html" class="nav-btn" title="Regresar al Home">🏠</a>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <h2>Gestión de Listas Negras</h2>
+
+        <div class="auth-container" style="margin-top: 20px;">
+            <h3>Agregar Palabra Prohibida</h3><br>
+            <form id="formPalabra">
+                <input type="text" id="palabra" class="form-control" placeholder="Ej: insulto" required>
+                <button type="submit" class="btn">Guardar Palabra</button>
+            </form>
+        </div>
+
+        <div class="auth-container" style="margin-top: 20px;">
+            <h3>Agregar Hashtag Prohibido</h3><br>
+            <form id="formHashtag">
+                <input type="text" id="hashtag" class="form-control" placeholder="Ej: #spam" required>
+                <button type="submit" class="btn">Guardar Hashtag</button>
+            </form>
+        </div>
+    </div>
+
+   <script>
+        function cerrarSesion() {
+            localStorage.removeItem('usuarioLogeado');
+            window.location.href = '/';
+        }
+
+        // Enviar Palabra
+        document.getElementById('formPalabra').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const palabra = document.getElementById('palabra').value;
+            const res = await fetch('/api/admin/palabras', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ palabra })
+            });
+            const data = await res.json();
+            if (res.ok) { alert(data.message); document.getElementById('formPalabra').reset(); }
+            else { alert('Error: ' + data.error); }
+        });
+
+        // Enviar Hashtag
+        document.getElementById('formHashtag').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const hashtag = document.getElementById('hashtag').value;
+            const res = await fetch('/api/admin/hashtags', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hashtag })
+            });
+            const data = await res.json();
+            if (res.ok) { alert(data.message); document.getElementById('formHashtag').reset(); }
+            else { alert('Error: ' + data.error); }
+        });
+    </script>
+</body>
+</html>
