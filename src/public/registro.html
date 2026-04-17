@@ -22,12 +22,12 @@
             const usuario = document.getElementById('usuario').value;
             const correo = document.getElementById('correo').value;
             const password = document.getElementById('password').value;
-            const rol = document.getElementById('rol').value;
+            
 
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario, correo, password, rol })
+                body: JSON.stringify({ usuario, correo, password})
             });
 
             const data = await res.json();
