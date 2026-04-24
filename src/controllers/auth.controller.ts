@@ -44,6 +44,16 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
+
+        const passwordSegura = /^(?=.*[A-Z])(?=.*\d).+$/;
+
+        if (!passwordSegura.test(password)) {
+        res.status(400).json({
+            error: 'La contraseña debe tener al menos una letra mayúscula y un número.'
+        });
+        return;
+        }
+
         const validPassword = await bcrypt.compare(password, user.password);
         
         if (!validPassword) {

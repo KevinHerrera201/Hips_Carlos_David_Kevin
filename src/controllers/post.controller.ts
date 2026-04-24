@@ -1,9 +1,21 @@
 import { Request, Response } from 'express';
 import { pool } from '../db/database'; 
 
+const registrarActividad = async (usuario: string, accion: string) => {
+  try {
+    await pool.query(
+      'INSERT INTO bitacora (usuario, accion) VALUES ($1, $2)',
+      [usuario || 'Sistema', accion]
+    );
+  } catch (error) {
+    console.error('Error al registrar actividad:', error);
+  }
+};
+
 export const crearPublicacion = async (req: Request, res: Response): Promise<void> => {
     // ... (Mantén tu código actual de crearPublicacion exactamente igual)
     const { descripcion, hashtags } = req.body;
+    const imagen = req.file ? `/uploads/${req.file.filename}` : null;
     const usuario = req.headers['x-usuario'] as string || 'Usuario Desconocido';
 
     if (!descripcion || descripcion.trim().length === 0) { res.status(400).json({ error: 'La descripción no puede estar vacía' }); return; }
@@ -26,7 +38,16 @@ export const crearPublicacion = async (req: Request, res: Response): Promise<voi
             if (hashtagsEncontrados.length > 0) { res.status(403).json({ error: `Contiene hashtags prohibidos: ${hashtagsEncontrados.join(', ')}` }); return; }
         }
 
-        await pool.query('INSERT INTO publicaciones (usuario, descripcion, hashtags) VALUES ($1, $2, $3)', [usuario, descripcion, hashtags]);
+        await pool.query(
+            'INSERT INTO publicaciones (usuario, descripcion, hashtags, imagen) VALUES ($1, $2, $3, $4)',
+            [usuario, descripcion, hashtags, imagen]
+        );
+
+        await registrarActividad(
+            usuario,
+            `Subió una publicación: "${descripcion}"`
+        );      
+
         res.status(201).json({ message: 'Publicación creada exitosamente' });
 
     } catch (error) {
@@ -38,7 +59,7 @@ export const crearPublicacion = async (req: Request, res: Response): Promise<voi
 export const obtenerFeed = async (req: Request, res: Response): Promise<void> => {
     try {
         const query = `
-            SELECT p.id, p.usuario, p.descripcion, p.hashtags, p.fecha, p.oculto,
+            SELECT p.id, p.usuario, p.descripcion, p.hashtags, p.fecha, p.oculto, p.imagen,
                 COALESCE((SELECT AVG(estrellas) FROM calificaciones_posts WHERE post_id = p.id), 0) AS promedio_estrellas,
                 COALESCE((SELECT SUM(CASE WHEN tipo = 1 THEN 1 ELSE 0 END) FROM reacciones_posts WHERE post_id = p.id), 0) AS likes,
                 COALESCE((SELECT SUM(CASE WHEN tipo = -1 THEN 1 ELSE 0 END) FROM reacciones_posts WHERE post_id = p.id), 0) AS dislikes
@@ -88,6 +109,20 @@ export const reaccionarPost = async (req: Request, res: Response): Promise<void>
             DO UPDATE SET tipo = EXCLUDED.tipo
         `, [id, usuario, tipo]);
 
+            const post = await pool.query(
+                'SELECT descripcion FROM publicaciones WHERE id = $1',
+                [id]
+            );
+
+            const descripcion = post.rows[0]?.descripcion || `ID ${id}`;
+            const accion = tipo === 1 ? 'dio like a' : 'dio dislike a';
+
+            await registrarActividad(
+                usuario,
+                `${accion} la publicación: "${descripcion}"`
+            );
+
+
         res.status(200).json({ message: 'Reacción registrada' });
     } catch (error) {
         res.status(500).json({ error: 'Error al reaccionar' });
@@ -114,6 +149,16 @@ export const calificarPost = async (req: Request, res: Response): Promise<void> 
             DO UPDATE SET estrellas = EXCLUDED.estrellas
         `, [id, usuario, estrellas]);
 
+        const descripcion = await pool.query(
+            'SELECT descripcion FROM publicaciones WHERE id = $1',
+            [id]
+        );
+
+        await registrarActividad(
+            usuario,
+            `Calificó con ${estrellas} estrellas la publicación: "${descripcion.rows[0]?.descripcion || `ID ${id}`}"` 
+        );
+
         res.status(200).json({ message: 'Calificación registrada' });
     } catch (error) {
         res.status(500).json({ error: 'Error al calificar' });
@@ -137,9 +182,84 @@ export const alternarOculto = async (req: Request, res: Response): Promise<void>
             return;
         }
 
-        await pool.query('UPDATE publicaciones SET oculto = $1 WHERE id = $2', [oculto, id]);
+        await pool.query(
+            'UPDATE publicaciones SET oculto = $1 WHERE id = $2',
+            [oculto, id]
+        );
+
+        const descripcion = await pool.query(
+            'SELECT descripcion FROM publicaciones WHERE id = $1',
+            [id]
+        );
+
+        await registrarActividad(
+            usuario,
+            oculto
+                ? `Ocultó la publicación: "${descripcion.rows[0]?.descripcion || `ID ${id}`}"`
+                : `Restauró la publicación: "${descripcion.rows[0]?.descripcion || `ID ${id}`}"`
+        );
+
         res.status(200).json({ message: 'Visibilidad actualizada' });
     } catch (error) {
         res.status(500).json({ error: 'Error al cambiar visibilidad' });
     }
+};
+export const obtenerComentarios = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT id, post_id, usuario, comentario, fecha
+       FROM comentarios_posts
+       WHERE post_id = $1
+       ORDER BY fecha ASC`,
+      [id]
+    );
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener comentarios' });
+  }
+};
+
+export const comentarPost = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { comentario } = req.body;
+  const usuario = req.headers['x-usuario'] as string;
+
+  if (!comentario || comentario.trim().length === 0) {
+    res.status(400).json({ error: 'El comentario no puede estar vacío' });
+    return;
+  }
+
+  try {
+    const post = await pool.query(
+      'SELECT descripcion FROM publicaciones WHERE id = $1',
+      [id]
+    );
+
+    if (post.rows.length === 0) {
+      res.status(404).json({ error: 'Publicación no encontrada' });
+      return;
+    }
+
+    await pool.query(
+      `INSERT INTO comentarios_posts (post_id, usuario, comentario)
+       VALUES ($1, $2, $3)`,
+      [id, usuario, comentario.trim()]
+    );
+
+    await pool.query(
+      `INSERT INTO bitacora (usuario, accion)
+       VALUES ($1, $2)`,
+      [
+        usuario,
+        `Comentó "${comentario.trim()}" en la publicación: "${post.rows[0].descripcion}"`
+      ]
+    );
+
+    res.status(201).json({ message: 'Comentario registrado' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al comentar la publicación' });
+  }
 };

@@ -50,7 +50,13 @@
                 <div style="text-align: right; font-size: 12px; color: gray;"><span id="contadorChars">0</span>/128</div>
 
                 <input type="text" id="hashtagsPost" class="form-control" placeholder="Ej: #viaje #amigos" style="width: 100%; margin-top: 10px;">
-                
+                <input 
+                    type="file" 
+                    id="imagenPost" 
+                    accept="image/*" 
+                    class="form-control" 
+                    style="width: 100%; margin-top: 10px;"
+                >
                 <div style="display: flex; justify-content: space-between; margin-top: 15px;">
                     <button type="button" class="btn" style="background: gray;" onclick="cerrarSubirContenido()">Cancelar</button>
                     <button type="submit" class="btn" style="background: #28a745;">Publicar</button>
@@ -200,8 +206,15 @@
                             👤 ${post.usuario} ${etiquetaOculto}
                         </div>
                         <div style="font-size: 14px; margin-bottom: 10px; color: #444;">${post.descripcion}</div>
+
+                        ${post.imagen ? `
+                            <img 
+                                src="${post.imagen}" 
+                                style="width: 100%; max-height: 350px; object-fit: cover; border-radius: 8px; margin: 10px 0;"
+                            >
+                        ` : ''}
+
                         <div style="color: #007bff; font-size: 13px; font-weight: bold;">${post.hashtags || ''}</div>
-                        
                         ${generarEstrellasHTML(post.id, post.usuario, post.promedio_estrellas)}
 
                         <div style="margin-top: 10px; display: flex; gap: 15px; font-size: 16px;">
@@ -209,15 +222,79 @@
                             <span style="cursor: pointer; user-select: none;" onclick="reaccionar(${post.id}, -1)">👎 ${post.dislikes}</span>
                         </div>
 
+                        <div style="margin-top: 15px;">
+                            <div id="comentarios-${post.id}" style="margin-bottom: 8px;"></div>
+
+                            <div style="display: flex; gap: 5px;">
+                                <input 
+                                    type="text" 
+                                    id="comentario-input-${post.id}" 
+                                    placeholder="Escribe un comentario..." 
+                                    style="flex: 1; padding: 6px;"
+                                >
+                                <button 
+                                    onclick="comentar(${post.id})" 
+                                    style="padding: 6px 10px; cursor: pointer;"
+                                >
+                                    Comentar
+                                </button>
+                            </div>
+                        </div>
+
                         <div style="color: gray; font-size: 11px; margin-top: 10px; text-align: right;">
                             ${new Date(post.fecha).toLocaleString('es-ES')}
                         </div>
                     </div>
                 `}).join('');
+                posts.forEach(post => cargarComentarios(post.id));
             } catch (error) {
                 console.error("Error al cargar el feed:", error);
             }
         } 
+
+        async function cargarComentarios(postId) {
+            const res = await fetch(`/api/posts/${postId}/comentarios`);
+            const comentarios = await res.json();
+
+            const contenedor = document.getElementById(`comentarios-${postId}`);
+
+            contenedor.innerHTML = comentarios.map(c => `
+                <div style="border-top: 1px solid #eee; padding: 6px 0; font-size: 13px;">
+                    <strong>${c.usuario}:</strong> ${c.comentario}
+                    <div style="font-size: 10px; color: gray;">
+                        ${new Date(c.fecha).toLocaleString('es-ES')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function comentar(postId) {
+            const input = document.getElementById(`comentario-input-${postId}`);
+            const comentario = input.value.trim();
+
+            if (!comentario) {
+                alert('Escribe un comentario');
+                return;
+            }
+
+            const res = await fetch(`/api/posts/${postId}/comentar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-usuario': nombreUsuarioActual
+                },
+                body: JSON.stringify({ comentario })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                input.value = '';
+                cargarComentarios(postId);
+            } else {
+                alert(data.error || 'Error al comentar');
+            }
+     }
 
         cargarFeed();
 
@@ -241,14 +318,22 @@
             e.preventDefault();
             const descripcion = document.getElementById('descripcionPost').value;
             const hashtags = document.getElementById('hashtagsPost').value;
+            const imagen = document.getElementById('imagenPost').files[0];
 
-            const res = await fetch('/api/posts/crear', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-usuario': nombreUsuarioActual
-                },
-                body: JSON.stringify({ descripcion, hashtags })
+            const formData = new FormData();
+                formData.append('descripcion', descripcion);
+                formData.append('hashtags', hashtags);
+
+                if (imagen) {
+                    formData.append('imagen', imagen);
+                }
+
+                const res = await fetch('/api/posts/crear', {
+                    method: 'POST',
+                    headers: {
+                        'x-usuario': nombreUsuarioActual
+                    },
+                    body: formData
             });
             
             const data = await res.json();

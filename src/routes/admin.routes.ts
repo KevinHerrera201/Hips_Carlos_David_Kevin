@@ -3,7 +3,7 @@ import {
     obtenerUsuarios, cambiarEstadoUsuario, cambiarRolUsuario,
     obtenerPalabras, agregarPalabra, eliminarPalabra,
     obtenerHashtags, agregarHashtag, eliminarHashtag,
-    obtenerBitacora
+    obtenerBitacora, obtenerActividad
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -25,5 +25,6 @@ router.delete('/hashtags/:id', eliminarHashtag);
 
 // Ruta de Bitácora
 router.get('/bitacora', obtenerBitacora);
+router.get('/actividad', obtenerActividad);
 
 export default router;

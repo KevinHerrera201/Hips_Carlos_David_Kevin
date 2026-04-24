@@ -23,5 +23,6 @@ app.use('/api/admin', admin_routes_1.default);
 app.use('/api/posts', post_routes_1.default);
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, 'uploads')));
 });
 //# sourceMappingURL=index.js.map

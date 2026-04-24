@@ -39,6 +39,13 @@ const login = async (req, res) => {
             res.status(403).json({ error: 'Tu cuenta ha sido desactivada o bloqueada.' });
             return;
         }
+        const passwordSegura = /^(?=.*[A-Z])(?=.*\d).+$/;
+        if (!passwordSegura.test(password)) {
+            res.status(400).json({
+                error: 'La contraseña debe tener al menos una letra mayúscula y un número.'
+            });
+            return;
+        }
         const validPassword = await bcrypt_1.default.compare(password, user.password);
         if (!validPassword) {
             res.status(401).json({ error: 'Contraseña incorrecta' });

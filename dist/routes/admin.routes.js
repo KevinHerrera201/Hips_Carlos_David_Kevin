@@ -17,5 +17,6 @@ router.post('/hashtags', admin_controller_1.agregarHashtag);
 router.delete('/hashtags/:id', admin_controller_1.eliminarHashtag);
 // Ruta de Bitácora
 router.get('/bitacora', admin_controller_1.obtenerBitacora);
+router.get('/actividad', admin_controller_1.obtenerActividad);
 exports.default = router;
 //# sourceMappingURL=admin.routes.js.map

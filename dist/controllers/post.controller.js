@@ -2,9 +2,18 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.alternarOculto = exports.calificarPost = exports.reaccionarPost = exports.obtenerOcultos = exports.obtenerFeed = exports.crearPublicacion = void 0;
 const database_1 = require("../db/database");
+const registrarActividad = async (usuario, accion) => {
+    try {
+        await database_1.pool.query('INSERT INTO bitacora (usuario, accion) VALUES ($1, $2)', [usuario || 'Sistema', accion]);
+    }
+    catch (error) {
+        console.error('Error al registrar actividad:', error);
+    }
+};
 const crearPublicacion = async (req, res) => {
     // ... (Mantén tu código actual de crearPublicacion exactamente igual)
     const { descripcion, hashtags } = req.body;
+    const imagen = req.file ? `/uploads/${req.file.filename}` : null;
     const usuario = req.headers['x-usuario'] || 'Usuario Desconocido';
     if (!descripcion || descripcion.trim().length === 0) {
         res.status(400).json({ error: 'La descripción no puede estar vacía' });
@@ -33,7 +42,8 @@ const crearPublicacion = async (req, res) => {
                 return;
             }
         }
-        await database_1.pool.query('INSERT INTO publicaciones (usuario, descripcion, hashtags) VALUES ($1, $2, $3)', [usuario, descripcion, hashtags]);
+        await database_1.pool.query('INSERT INTO publicaciones (usuario, descripcion, hashtags, imagen) VALUES ($1, $2, $3, $4)', [usuario, descripcion, hashtags, imagen]);
+        await registrarActividad(usuario, `Subió una publicación: "${descripcion}"`);
         res.status(201).json({ message: 'Publicación creada exitosamente' });
     }
     catch (error) {
@@ -94,6 +104,10 @@ const reaccionarPost = async (req, res) => {
             ON CONFLICT (post_id, usuario) 
             DO UPDATE SET tipo = EXCLUDED.tipo
         `, [id, usuario, tipo]);
+        const post = await database_1.pool.query('SELECT descripcion FROM publicaciones WHERE id = $1', [id]);
+        const descripcion = post.rows[0]?.descripcion || `ID ${id}`;
+        const accion = tipo === 1 ? 'dio like a' : 'dio dislike a';
+        await registrarActividad(usuario, `${accion} la publicación: "${descripcion}"`);
         res.status(200).json({ message: 'Reacción registrada' });
     }
     catch (error) {
@@ -124,6 +138,8 @@ const calificarPost = async (req, res) => {
             ON CONFLICT (post_id, usuario) 
             DO UPDATE SET estrellas = EXCLUDED.estrellas
         `, [id, usuario, estrellas]);
+        const descripcion = await database_1.pool.query('SELECT descripcion FROM publicaciones WHERE id = $1', [id]);
+        await registrarActividad(usuario, `Calificó con ${estrellas} estrellas la publicación: "${descripcion.rows[0]?.descripcion || `ID ${id}`}"`);
         res.status(200).json({ message: 'Calificación registrada' });
     }
     catch (error) {
@@ -150,6 +166,10 @@ const alternarOculto = async (req, res) => {
             return;
         }
         await database_1.pool.query('UPDATE publicaciones SET oculto = $1 WHERE id = $2', [oculto, id]);
+        const descripcion = await database_1.pool.query('SELECT descripcion FROM publicaciones WHERE id = $1', [id]);
+        await registrarActividad(usuario, oculto
+            ? `Ocultó la publicación: "${descripcion.rows[0]?.descripcion || `ID ${id}`}"`
+            : `Restauró la publicación: "${descripcion.rows[0]?.descripcion || `ID ${id}`}"`);
         res.status(200).json({ message: 'Visibilidad actualizada' });
     }
     catch (error) {

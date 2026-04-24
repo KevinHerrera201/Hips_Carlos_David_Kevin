@@ -12,33 +12,63 @@
         <input type="text" id="usuario" placeholder="Usuario" required><br><br>
         <input type="email" id="correo" placeholder="Correo" required><br><br>
         <input type="password" id="password" placeholder="Contraseña" required><br><br>
+        
+
+        <small id="passwordHelp" style="color: red;">
+            Debe contener una mayúscula y un número
+        </small>
+
+        <br><br>
         <button type="submit">Registrarse</button>
     </form>
     <p>¿Ya tienes cuenta? <a href="/">Inicia sesión aquí</a></p>
 
     <script>
+        const passwordInput = document.getElementById('password');
+        const helpText = document.getElementById('passwordHelp');
+
+        passwordInput.addEventListener('input', () => {
+            const regex = /^(?=.*[A-Z])(?=.*\d).+$/;
+
+            if (regex.test(passwordInput.value)) {
+                helpText.style.color = 'green';
+                helpText.textContent = 'Contraseña válida ✔';
+            } else {
+                helpText.style.color = 'red';
+                helpText.textContent = 'Debe contener una mayúscula y un número';
+            }
+        });
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const usuario = document.getElementById('usuario').value;
-            const correo = document.getElementById('correo').value;
+
+            const usuario = document.getElementById('usuario').value.trim();
+            const correo = document.getElementById('correo').value.trim();
             const password = document.getElementById('password').value;
-            
+
+            const passwordSegura = /^(?=.*[A-Z])(?=.*\d).+$/;
+
+            if (!passwordSegura.test(password)) {
+            alert('La contraseña debe tener al menos una letra mayúscula y un número.');
+            return;
+            }
 
             const res = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario, correo, password})
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario, correo, password })
             });
 
             const data = await res.json();
+
             if (res.ok) {
-                alert('Usuario creado correctamente. Ahora puedes iniciar sesión.');
-                window.location.href = '/'; // Redirige al login
+            alert('Usuario creado correctamente. Ahora puedes iniciar sesión.');
+            window.location.href = '/';
             } else {
-                alert('Error: ' + data.error);
+            alert('Error: ' + data.error);
             }
         });
     </script>
+    
 </div>
 </body>
 </html>

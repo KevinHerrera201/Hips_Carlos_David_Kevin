@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.obtenerBitacora = exports.eliminarHashtag = exports.agregarHashtag = exports.obtenerHashtags = exports.eliminarPalabra = exports.agregarPalabra = exports.obtenerPalabras = exports.cambiarRolUsuario = exports.cambiarEstadoUsuario = exports.obtenerUsuarios = void 0;
+exports.obtenerActividad = exports.obtenerBitacora = exports.eliminarHashtag = exports.agregarHashtag = exports.obtenerHashtags = exports.eliminarPalabra = exports.agregarPalabra = exports.obtenerPalabras = exports.cambiarRolUsuario = exports.cambiarEstadoUsuario = exports.obtenerUsuarios = void 0;
 const database_1 = require("../db/database");
 // --- FUNCIÓN AUXILIAR PARA LA BITÁCORA ---
 const registrarAccion = async (usuario, accion) => {
@@ -144,4 +144,33 @@ const obtenerBitacora = async (req, res) => {
     }
 };
 exports.obtenerBitacora = obtenerBitacora;
+const obtenerActividad = async (req, res) => {
+    const rol = req.headers['x-rol'];
+    if (rol !== 'admin') {
+        res.status(403).json({ error: 'Solo un administrador puede ver la actividad' });
+        return;
+    }
+    try {
+        const result = await database_1.pool.query(`
+      SELECT usuario, accion, fecha
+      FROM bitacora
+      WHERE accion ILIKE '%publicación%'
+         OR accion ILIKE '%like%'
+         OR accion ILIKE '%calific%'
+         OR accion ILIKE '%ocult%'
+         OR accion ILIKE '%restaur%'
+      ORDER BY fecha DESC
+    `);
+        res.status(200).json(result.rows.map(row => ({
+            fecha: row.fecha,
+            usuario: row.usuario,
+            accion: row.accion,
+            publicacion: row.accion
+        })));
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Error al obtener actividad' });
+    }
+};
+exports.obtenerActividad = obtenerActividad;
 //# sourceMappingURL=admin.controller.js.map

@@ -128,3 +128,35 @@ export const obtenerBitacora = async (req: Request, res: Response): Promise<void
         res.status(500).json({ error: 'Error al obtener bitácora' });
     }
 };
+export const obtenerActividad = async (req: Request, res: Response): Promise<void> => {
+  const rol = req.headers['x-rol'] as string;
+
+  if (rol !== 'admin') {
+    res.status(403).json({ error: 'Solo un administrador puede ver la actividad' });
+    return;
+  }
+
+  try {
+    const result = await pool.query(`
+      SELECT usuario, accion, fecha
+      FROM bitacora
+      WHERE accion ILIKE '%publicación%'
+         OR accion ILIKE '%like%'
+         OR accion ILIKE '%calific%'
+         OR accion ILIKE '%ocult%'
+         OR accion ILIKE '%restaur%'
+      ORDER BY fecha DESC
+    `);
+
+    res.status(200).json(
+      result.rows.map(row => ({
+        fecha: row.fecha,
+        usuario: row.usuario,
+        accion: row.accion,
+        publicacion: row.accion
+      }))
+    );
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener actividad' });
+  }
+};

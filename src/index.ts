@@ -18,6 +18,13 @@ app.use(express.json());
 // Sirve tu frontend estático
 app.use(express.static(path.join(__dirname, 'public')));
 
+// 🔥 IMPORTANTE
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/posts', postRoutes);
+
 // Rutas de la API
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -25,4 +32,6 @@ app.use('/api/posts', postRoutes);
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
+
+
 });

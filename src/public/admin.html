@@ -31,12 +31,51 @@
         <div class="sidebar">
             <button class="active" onclick="mostrarSeccion('sec-usuarios', this)">Gestionar Usuarios</button>
             <button onclick="mostrarSeccion('sec-palabras', this)">Palabras Prohibidas</button>
-            <button onclick="mostrarSeccion('sec-hashtags', this)">Hashtags Prohibidos</button>
+            <button onclick="mostrarSeccion('sec-hashtags', this)">Hashtags Prohibidos</button>           
             <button onclick="mostrarSeccion('sec-bitacora', this)">Ver Acciones</button>
+            <button onclick="mostrarSeccion('sec-actividad', this)">Ver Actividad</button>
+            <button onclick="mostrarSeccion('sec-ocultas', this)">Publicaciones Ocultas</button>
         </div>
 
         <div class="content-area">
             
+            <div id="sec-actividad" class="seccion">
+                <h2>Ver Actividad</h2>
+                <input type="text" onkeyup="filtrar(this, 'cuerpoActividad', 'tr')" placeholder="🔍 Buscar actividad..." class="form-control" style="margin-bottom: 10px;">
+                <div class="caja" style="margin-top: 20px; max-height: 500px; overflow-y: auto;">
+                    <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #ccc;">
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th>Acción</th>
+                                <th>Publicación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoActividad"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="sec-ocultas" class="seccion">
+                <h2>Publicaciones Ocultas</h2>
+                <input type="text" onkeyup="filtrar(this, 'cuerpoOcultas', 'tr')" placeholder="🔍 Buscar publicación oculta..." class="form-control" style="margin-bottom: 10px;">
+                <div class="caja" style="margin-top: 20px; max-height: 500px; overflow-y: auto;">
+                    <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #ccc;">
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th>Descripción</th>
+                                <th>Hashtags</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoOcultas"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <div id="sec-usuarios" class="seccion activa">
                 <h2>Gestión de Usuarios</h2><br>
                 <input type="text" onkeyup="filtrar(this, 'cuerpoTablaUsuarios', 'tr')" placeholder="🔍 Buscar por usuario, correo o rol..." class="form-control" style="margin-top: 10px; max-width: 400px;">
@@ -107,13 +146,19 @@
 
 <script>
     // Capturar el usuario actual desde el login
-let nombreUsuarioActual = 'Admin';
+    let nombreUsuarioActual = 'Admin';
+    let rolUsuarioActual = 'admin';
+
     const usuarioGuardado = localStorage.getItem('usuarioLogeado');
+
     if (usuarioGuardado) {
-        try { 
-            nombreUsuarioActual = JSON.parse(usuarioGuardado).usuario || 'Admin'; 
-        } catch (e) { 
-            nombreUsuarioActual = usuarioGuardado; // Usa el texto normal si falla el JSON
+        try {
+            const user = JSON.parse(usuarioGuardado);
+            nombreUsuarioActual = user.usuario || 'Admin';
+            rolUsuarioActual = user.rol || 'admin';
+        } catch (e) {
+            nombreUsuarioActual = usuarioGuardado;
+            rolUsuarioActual = 'admin';
         }
     }
     
@@ -142,9 +187,76 @@ let nombreUsuarioActual = 'Admin';
             }
         }
     }
+    async function restaurarPublicacion(id) {
+    if (!confirm('¿Deseas volver a publicar esta publicación?')) return;
+
+    const res = await fetch(`/api/posts/${id}/oculto`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-usuario': nombreUsuarioActual,
+            'x-rol': rolUsuarioActual
+        },
+        body: JSON.stringify({ oculto: false })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+        alert('Publicación restaurada correctamente');
+        cargarDatos();
+    } else {
+        alert(data.error || 'Error al restaurar publicación');
+    }
+}
     // Función unificada para cargar todos los datos de la base de datos
     async function cargarDatos() {
         try {
+
+                        // Cargar Actividad
+            const resAct = await fetch('/api/admin/actividad', {
+                headers: {
+                    'x-usuario': nombreUsuarioActual,
+                    'x-rol': rolUsuarioActual
+                }
+            });
+
+            const actividad = await resAct.json();
+
+            document.getElementById('cuerpoActividad').innerHTML = actividad.map(a => `
+                <tr style="border-bottom: 1px solid #eee; height: 40px;">
+                    <td>${new Date(a.fecha).toLocaleString('es-ES')}</td>
+                    <td><strong>${a.usuario}</strong></td>
+                    <td>${a.accion}</td>
+                    <td>${a.publicacion || 'Sin publicación'}</td>
+                </tr>
+            `).join('');
+
+
+            // Cargar Publicaciones Ocultas
+            const resOcultas = await fetch('/api/posts/ocultos', {
+                headers: {
+                    'x-usuario': nombreUsuarioActual,
+                    'x-rol': rolUsuarioActual
+                }
+            });
+
+            const ocultas = await resOcultas.json();
+
+            document.getElementById('cuerpoOcultas').innerHTML = ocultas.map(p => `
+                <tr style="border-bottom: 1px solid #eee; height: 50px;">
+                    <td>${new Date(p.fecha).toLocaleString('es-ES')}</td>
+                    <td><strong>${p.usuario}</strong></td>
+                    <td>${p.descripcion}</td>
+                    <td>${p.hashtags || ''}</td>
+                    <td>
+                        <button class="btn" style="padding: 5px; background: #28a745;" onclick="restaurarPublicacion(${p.id})">
+                            Volver a publicar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
             // Cargar Usuarios
             const resU = await fetch('/api/admin/usuarios');
             const usuarios = await resU.json();
