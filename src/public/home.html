@@ -59,20 +59,24 @@
         </div>
     </div>
 
-    <script>
+<script>
         // 1. Manejo del Usuario Logeado
         let nombreUsuarioActual = 'Usuario';
+        let rolUsuarioActual = 'normal'; 
         const usuarioGuardado = localStorage.getItem('usuarioLogeado');
         
         if (!usuarioGuardado) {
             window.location.href = '/';
         } else {
             try { 
-                nombreUsuarioActual = JSON.parse(usuarioGuardado).usuario || 'Usuario'; 
+                const userData = JSON.parse(usuarioGuardado); // Corregido: Ahora sí declaramos userData
+                nombreUsuarioActual = userData.usuario || 'Usuario'; 
+                rolUsuarioActual = userData.rol || 'normal'; 
             } catch (e) { 
                 nombreUsuarioActual = usuarioGuardado; 
             }
-            document.getElementById('mensajeBienvenida').innerText = '¡Hola, ' + nombreUsuarioActual + '!';
+            // Corregido: Línea completada
+            document.getElementById('mensajeBienvenida').innerText = '¡Hola, ' + nombreUsuarioActual.trim() + '!';
         }
 
         function cerrarSesion() {
@@ -93,9 +97,50 @@
 
             const data = await res.json();
             if (res.ok) {
-                cargarFeed(); // Recarga el feed para actualizar el promedio
+                cargarFeed(); 
             } else {
                 alert(data.error);
+            }
+        }
+
+        async function reaccionar(postId, tipo) {
+            const res = await fetch(`/api/posts/${postId}/reaccionar`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-usuario': nombreUsuarioActual
+                },
+                body: JSON.stringify({ tipo })
+            });
+
+            if (res.ok) {
+                cargarFeed(); 
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Error al reaccionar');
+            }
+        }
+
+        async function cambiarVisibilidad(postId, estadoOculto) {
+            try {
+                const res = await fetch(`/api/posts/${postId}/ocultar`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-usuario': nombreUsuarioActual,
+                        'x-rol': rolUsuarioActual
+                    },
+                    body: JSON.stringify({ oculto: estadoOculto })
+                });
+
+                if (res.ok) {
+                    cargarFeed(); // Recargamos la vista
+                } else {
+                    const textoError = await res.text();
+                    alert("Error del backend: " + textoError);
+                }
+            } catch (error) {
+                alert("Error en la página: " + error.message);
             }
         }
 
@@ -107,10 +152,8 @@
             for (let i = 1; i <= 5; i++) {
                 const color = i <= prom ? '#ffc107' : '#e4e5e9';
                 if (esAutor) {
-                    // El autor solo ve el promedio, sin opción a click
                     html += `<span class="estrella" style="color: ${color}; cursor: default;">★</span>`;
                 } else {
-                    // Otros usuarios pueden votar
                     html += `<span class="estrella interactiva" style="color: ${color}; cursor: pointer;" onclick="votar(${postId}, ${i})">★</span>`;
                 }
             }
@@ -121,28 +164,61 @@
         // 3. Cargar el Feed de Publicaciones
         async function cargarFeed() {
             try {
-                const res = await fetch('/api/posts/feed');
+                const res = await fetch('/api/posts/feed', {
+                    headers: {
+                        'x-usuario': nombreUsuarioActual,
+                        'x-rol': rolUsuarioActual
+                    },
+                    cache: 'no-store'
+                });
                 const posts = await res.json();
-                
-                document.getElementById('feedContainer').innerHTML = posts.map(post => `
-                    <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: left;">
-                        <div style="font-weight: bold; margin-bottom: 5px; color: #333;">👤 ${post.usuario}</div>
+
+                document.getElementById('feedContainer').innerHTML = posts.map(post => {
+                    const esAutorOAdmin = (nombreUsuarioActual.trim().toLowerCase() === post.usuario.trim().toLowerCase() || rolUsuarioActual === 'admin');
+                    
+                    // NUEVO: Dos botones (Check y X)
+                    let botonesEstado = '';
+                    if (esAutorOAdmin) {
+                        botonesEstado = `
+                            <div style="float: right; display: flex; gap: 5px;">
+                                <button onclick="cambiarVisibilidad(${post.id}, false)" title="Habilitar" style="cursor: pointer; background: ${post.oculto ? 'white' : '#d4edda'}; border: 1px solid #c3e6cb; border-radius: 4px; padding: 2px 6px;">
+                                    ✅
+                                </button>
+                                <button onclick="cambiarVisibilidad(${post.id}, true)" title="Deshabilitar" style="cursor: pointer; background: ${post.oculto ? '#f8d7da' : 'white'}; border: 1px solid #f5c6cb; border-radius: 4px; padding: 2px 6px;">
+                                    ❌
+                                </button>
+                            </div>
+                        `;
+                    }
+
+                    const etiquetaOculto = post.oculto ? '<span style="color: red; border: 1px solid red; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 10px;">DESHABILITADO</span>' : '';
+
+                    return `
+                    <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: left; opacity: ${post.oculto ? '0.6' : '1'}; margin-bottom: 15px;">
+                        ${botonesEstado} 
+                        <div style="font-weight: bold; margin-bottom: 5px; color: #333;">
+                            👤 ${post.usuario} ${etiquetaOculto}
+                        </div>
                         <div style="font-size: 14px; margin-bottom: 10px; color: #444;">${post.descripcion}</div>
                         <div style="color: #007bff; font-size: 13px; font-weight: bold;">${post.hashtags || ''}</div>
                         
                         ${generarEstrellasHTML(post.id, post.usuario, post.promedio_estrellas)}
 
+                        <div style="margin-top: 10px; display: flex; gap: 15px; font-size: 16px;">
+                            <span style="cursor: pointer; user-select: none;" onclick="reaccionar(${post.id}, 1)">👍 ${post.likes}</span>
+                            <span style="cursor: pointer; user-select: none;" onclick="reaccionar(${post.id}, -1)">👎 ${post.dislikes}</span>
+                        </div>
+
                         <div style="color: gray; font-size: 11px; margin-top: 10px; text-align: right;">
                             ${new Date(post.fecha).toLocaleString('es-ES')}
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             } catch (error) {
                 console.error("Error al cargar el feed:", error);
             }
-        }
+        } 
 
-        // Inicializar el feed
         cargarFeed();
 
         // 4. Funciones del Modal
@@ -156,7 +232,6 @@
             document.getElementById('contadorChars').innerText = '0';
         }
 
-        // Contador dinámico
         document.getElementById('descripcionPost').addEventListener('input', function() {
             document.getElementById('contadorChars').innerText = this.value.length;
         });
