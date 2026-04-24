@@ -1,74 +1,105 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Registro - Hipstagram</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro - Hipstagram</title>
+  <link rel="stylesheet" href="/styles.css">
 </head>
-<link rel="stylesheet" href="/styles.css">
-<div class="auth-container">
-<body>
-    <h2>Crear Cuenta</h2>
-    <form id="registerForm">
-        <input type="text" id="usuario" placeholder="Usuario" required><br><br>
-        <input type="email" id="correo" placeholder="Correo" required><br><br>
-        <input type="password" id="password" placeholder="Contraseña" required><br><br>
-        
 
-        <small id="passwordHelp" style="color: red;">
+<body class="login-page">
+
+  <div class="login-wrapper">
+
+    <section class="login-hero register-hero">
+      <div class="hero-overlay">
+        <h1>Únete a Hipstagram</h1>
+        <p>Crea tu cuenta, comparte tus mejores momentos y conecta con la comunidad.</p>
+      </div>
+    </section>
+
+    <section class="login-card">
+      <div class="login-header">
+        <h2>Crear cuenta</h2>
+        <p>Completa tus datos para registrarte</p>
+      </div>
+
+      <form id="registerForm" class="login-form">
+        <div class="input-group">
+          <label for="usuario">Usuario</label>
+          <input type="text" id="usuario" placeholder="Tu nombre de usuario" required>
+        </div>
+
+        <div class="input-group">
+          <label for="correo">Correo electrónico</label>
+          <input type="email" id="correo" placeholder="ejemplo@correo.com" required>
+        </div>
+
+        <div class="input-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" placeholder="Crea una contraseña segura" required>
+          <small id="passwordHelp" class="password-help error">
             Debe contener una mayúscula y un número
-        </small>
+          </small>
+        </div>
 
-        <br><br>
-        <button type="submit">Registrarse</button>
-    </form>
-    <p>¿Ya tienes cuenta? <a href="/">Inicia sesión aquí</a></p>
+        <button type="submit" class="login-btn">Registrarse</button>
+      </form>
 
-    <script>
-        const passwordInput = document.getElementById('password');
-        const helpText = document.getElementById('passwordHelp');
+      <p class="register-text">
+        ¿Ya tienes cuenta?
+        <a href="/">Inicia sesión aquí</a>
+      </p>
+    </section>
 
-        passwordInput.addEventListener('input', () => {
-            const regex = /^(?=.*[A-Z])(?=.*\d).+$/;
+  </div>
 
-            if (regex.test(passwordInput.value)) {
-                helpText.style.color = 'green';
-                helpText.textContent = 'Contraseña válida ✔';
-            } else {
-                helpText.style.color = 'red';
-                helpText.textContent = 'Debe contener una mayúscula y un número';
-            }
-        });
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+  <script>
+    const passwordInput = document.getElementById('password');
+    const helpText = document.getElementById('passwordHelp');
 
-            const usuario = document.getElementById('usuario').value.trim();
-            const correo = document.getElementById('correo').value.trim();
-            const password = document.getElementById('password').value;
+    passwordInput.addEventListener('input', () => {
+      const regex = /^(?=.*[A-Z])(?=.*\d).+$/;
 
-            const passwordSegura = /^(?=.*[A-Z])(?=.*\d).+$/;
+      if (regex.test(passwordInput.value)) {
+        helpText.className = 'password-help success';
+        helpText.textContent = 'Contraseña válida ✔';
+      } else {
+        helpText.className = 'password-help error';
+        helpText.textContent = 'Debe contener una mayúscula y un número';
+      }
+    });
 
-            if (!passwordSegura.test(password)) {
-            alert('La contraseña debe tener al menos una letra mayúscula y un número.');
-            return;
-            }
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-            const res = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario, correo, password })
-            });
+      const usuario = document.getElementById('usuario').value.trim();
+      const correo = document.getElementById('correo').value.trim();
+      const password = document.getElementById('password').value;
 
-            const data = await res.json();
+      const passwordSegura = /^(?=.*[A-Z])(?=.*\d).+$/;
 
-            if (res.ok) {
-            alert('Usuario creado correctamente. Ahora puedes iniciar sesión.');
-            window.location.href = '/';
-            } else {
-            alert('Error: ' + data.error);
-            }
-        });
-    </script>
-    
-</div>
+      if (!passwordSegura.test(password)) {
+        alert('La contraseña debe tener al menos una letra mayúscula y un número.');
+        return;
+      }
+
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, correo, password })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('Usuario creado correctamente. Ahora puedes iniciar sesión.');
+        window.location.href = '/';
+      } else {
+        alert('Error: ' + data.error);
+      }
+    });
+  </script>
+
 </body>
 </html>
