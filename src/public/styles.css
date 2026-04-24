@@ -209,7 +209,10 @@ body { background-color: #f0f2f5; color: #333; }
   font-size: 24px;
   font-weight: 800;
   background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
+background-clip: text;              /* 👈 estándar */
+-webkit-background-clip: text;      /* 👈 compatibilidad */
+
+-webkit-text-fill-color: transparent;
   -webkit-text-fill-color: transparent;
 }
 
@@ -218,7 +221,7 @@ body { background-color: #f0f2f5; color: #333; }
   padding: 12px 18px;
   border-radius: 999px;
   border: 1px solid #ddd;
-  background: #f8f9fb;
+  background: #fbf8fa;
   outline: none;
 }
 
@@ -525,7 +528,10 @@ body { background-color: #f0f2f5; color: #333; }
   font-size: 24px;
   font-weight: 800;
   background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
+ background-clip: text;              /* 👈 estándar */
+-webkit-background-clip: text;      /* 👈 compatibilidad */
+
+-webkit-text-fill-color: transparent;
   -webkit-text-fill-color: transparent;
 }
 
