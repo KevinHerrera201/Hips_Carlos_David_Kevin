@@ -4,17 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "dev": "ts-node-dev src/index.ts",
-  "build": "tsc",
-  "start": "node dist/index.js"
-
-
+    "dev": "ts-node-dev src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "sonar": "sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@sonar/scan": "^4.3.6",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
