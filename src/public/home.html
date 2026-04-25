@@ -23,6 +23,13 @@
         
         <div class="nav-center">
             <input type="text" id="buscador" placeholder="Buscar usuarios o posts..." class="search-input">
+            <select id="filtroFeed" class="search-input" style="margin-left: 10px; width: 220px;">
+                <option value="recientes">Más recientes</option>
+                <option value="mejor-ranking">Mejor ranking</option>
+                <option value="peor-ranking">Peor ranking</option>
+                <option value="mas-likes">Más likes</option>
+                <option value="mas-dislikes">Más dislikes</option>
+            </select>
         </div>
 
         <div class="nav-links">
@@ -56,6 +63,13 @@
                     class="form-control" 
                     style="width: 100%; margin-top: 10px;"
                 >
+                <div id="previewContainer" style="display: none; margin-top: 12px;">
+                    <img 
+                        id="previewImagen" 
+                        src="" 
+                        style="width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px;"
+                    >
+                </div>
                 <div style="display: flex; justify-content: space-between; margin-top: 15px;">
                     <button type="button" class="btn" style="background: gray;" onclick="cerrarSubirContenido()">Cancelar</button>
                     <button type="submit" class="btn" style="background: #28a745;">Publicar</button>
@@ -168,21 +182,47 @@
 
         let postsGlobales = [];
 
+        function aplicarFiltrosFeed() {
+            const texto = document.getElementById('buscador').value.toLowerCase().trim();
+            const filtro = document.getElementById('filtroFeed').value;
+
+            let postsFiltrados = postsGlobales.filter(post => {
+                return (
+                    post.usuario.toLowerCase().includes(texto) ||
+                    post.descripcion.toLowerCase().includes(texto) ||
+                    (post.hashtags || '').toLowerCase().includes(texto)
+                );
+            });
+
+            postsFiltrados.sort((a, b) => {
+                if (filtro === 'mejor-ranking') {
+                    return Number(b.promedio_estrellas) - Number(a.promedio_estrellas);
+                }
+
+                if (filtro === 'peor-ranking') {
+                    return Number(a.promedio_estrellas) - Number(b.promedio_estrellas);
+                }
+
+                if (filtro === 'mas-likes') {
+                    return Number(b.likes) - Number(a.likes);
+                }
+
+                if (filtro === 'mas-dislikes') {
+                    return Number(b.dislikes) - Number(a.dislikes);
+                }
+
+                return new Date(b.fecha) - new Date(a.fecha);
+            });
+
+            renderizarFeed(postsFiltrados);
+        }
+
+
         // 3. Cargar el Feed de Publicaciones
         async function cargarFeed() {
-            document.getElementById('buscador').addEventListener('input', function () {
-                const texto = this.value.toLowerCase().trim();
+            document.getElementById('buscador').addEventListener('input', aplicarFiltrosFeed);
+            document.getElementById('filtroFeed').addEventListener('change', aplicarFiltrosFeed);
 
-                const filtrados = postsGlobales.filter(post => {
-                    return (
-                        post.usuario.toLowerCase().includes(texto) ||
-                        post.descripcion.toLowerCase().includes(texto) ||
-                        (post.hashtags || '').toLowerCase().includes(texto)
-                    );
-                });
-
-                renderizarFeed(filtrados);
-        });
             try {
                 const res = await fetch('/api/posts/feed', {
                     headers: {
@@ -193,8 +233,9 @@
                 });
                 const posts = await res.json();
                 postsGlobales = posts;
+                aplicarFiltrosFeed();
 
-                renderizarFeed(postsGlobales);
+                
                 return;
 
                 document.getElementById('feedContainer').innerHTML = posts.map(post => {
@@ -388,16 +429,37 @@
         function abrirSubirContenido() {
             document.getElementById('modalSubir').style.display = 'flex';
         }
+        
+        
 
         function cerrarSubirContenido() {
             document.getElementById('modalSubir').style.display = 'none';
             document.getElementById('formSubirPost').reset();
             document.getElementById('contadorChars').innerText = '0';
+            document.getElementById('previewImagen').src = '';
+            document.getElementById('previewContainer').style.display = 'none';
+            
         }
 
         document.getElementById('descripcionPost').addEventListener('input', function() {
-            document.getElementById('contadorChars').innerText = this.value.length;
+        document.getElementById('contadorChars').innerText = this.value.length;
         });
+
+
+        document.getElementById('imagenPost').addEventListener('change', function () {
+            const archivo = this.files[0];
+            const previewContainer = document.getElementById('previewContainer');
+            const previewImagen = document.getElementById('previewImagen');
+
+            if (archivo) {
+                previewImagen.src = URL.createObjectURL(archivo);
+                previewContainer.style.display = 'block';
+            } else {
+                previewImagen.src = '';
+                previewContainer.style.display = 'none';
+            }
+        });
+
 
         // 5. Enviar publicación
         document.getElementById('formSubirPost').addEventListener('submit', async (e) => {
@@ -405,6 +467,7 @@
             const descripcion = document.getElementById('descripcionPost').value;
             const hashtags = document.getElementById('hashtagsPost').value;
             const imagen = document.getElementById('imagenPost').files[0];
+
 
             const formData = new FormData();
                 formData.append('descripcion', descripcion);
